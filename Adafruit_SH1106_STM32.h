@@ -138,6 +138,7 @@ class Adafruit_SH1106 : public Adafruit_GFX {
   void clearDisplay(void);
   void invertDisplay(uint8_t i);
   void display();
+  uint8_t* VRAM();
 
   /*void startscrollright(uint8_t start, uint8_t stop);
   void startscrollleft(uint8_t start, uint8_t stop);

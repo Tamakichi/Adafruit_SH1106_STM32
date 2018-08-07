@@ -109,6 +109,9 @@ static uint8_t buffer[SH1106_LCDHEIGHT * SH1106_LCDWIDTH / 8] = {
 #endif
 };
 
+uint8_t* Adafruit_SH1106::VRAM() {
+  return buffer;
+}
 
 // the most basic function, set a single pixel
 void Adafruit_SH1106::drawPixel(int16_t x, int16_t y, uint16_t color) {

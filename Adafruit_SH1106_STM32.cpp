@@ -18,17 +18,10 @@ All text above, and the splash screen below must be included in any redistributi
 
 #include <stdlib.h>
 #include "Adafruit_SH1106_STM32.h"
+#define USESPLASH  1
 
-#define OLD_ARDUINO_STM32 0  // Arduino STM32環境が R20170323:1、 それ以降 0
-
-#if OLD_ARDUINO_STM32 == 1
-  #include <HardWire.h>
-#else 
-  #include <Wire.h>
-#endif 
-
-HardWire HWIRE(1,I2C_FAST_MODE);    // I2c1
-//HardWire HWIRE(2,I2C_FAST_MODE)   // I2c2
+#include <Wire.h>
+#define HWIRE Wire
 
 #ifndef swap
 #define swap(a, b) { int16_t t = a; a = b; b = t; }
@@ -37,7 +30,7 @@ HardWire HWIRE(1,I2C_FAST_MODE);    // I2c1
 static SPIClass* pSPI; // 2017/9/11 Tamakichi
 
 // the memory buffer for the LCD
-
+#if USESPLASH == 1
 static uint8_t buffer[SH1106_LCDHEIGHT * SH1106_LCDWIDTH / 8] = { 
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -108,6 +101,9 @@ static uint8_t buffer[SH1106_LCDHEIGHT * SH1106_LCDWIDTH / 8] = {
 #endif
 #endif
 };
+#else
+static uint8_t buffer[SH1106_LCDHEIGHT * SH1106_LCDWIDTH / 8];
+#endif
 
 uint8_t* Adafruit_SH1106::VRAM() {
   return buffer;
@@ -144,6 +140,31 @@ void Adafruit_SH1106::drawPixel(int16_t x, int16_t y, uint16_t color) {
     
 }
 
+// get a single pixel
+uint16_t Adafruit_SH1106::getPixel(int16_t x, int16_t y) {
+  if ((x < 0) || (x >= width()) || (y < 0) || (y >= height()))
+    return 0;
+
+   // check rotation, move pixel around if necessary
+  switch (getRotation()) {
+  case 1:
+    swap(x, y);
+    x = WIDTH - x - 1;
+    break;
+  case 2:
+    x = WIDTH - x - 1;
+    y = HEIGHT - y - 1;
+    break;
+  case 3:
+    swap(x, y);
+    y = HEIGHT - y - 1;
+    break;
+  }  
+
+  return buffer[x+ (y/8)*SH1106_LCDWIDTH] & (1 << (y&7)) ? 1:0;
+}
+
+/* 
 Adafruit_SH1106::Adafruit_SH1106(int8_t SID, int8_t SCLK, int8_t DC, int8_t RST, int8_t CS) : Adafruit_GFX(SH1106_LCDWIDTH, SH1106_LCDHEIGHT) {
   cs = CS;
   rst = RST;
@@ -152,20 +173,19 @@ Adafruit_SH1106::Adafruit_SH1106(int8_t SID, int8_t SCLK, int8_t DC, int8_t RST,
   sid = SID;
   hwSPI = false;
 }
-
+*/
 // constructor for hardware SPI - we indicate DataCommand, ChipSelect, Reset 
 Adafruit_SH1106::Adafruit_SH1106(int8_t DC, int8_t RST, int8_t CS, uint8_t _spidev) : Adafruit_GFX(SH1106_LCDWIDTH, SH1106_LCDHEIGHT) {
   dc = DC;
   rst = RST;
   cs = CS;
   hwSPI = true;
-  
+
   spidev =_spidev; // <<--  2017/09/11 add by Tamakichi
   if (spidev == 2)
-	pSPI = new SPIClass(2);
+	   pSPI = new SPIClass(2);
   else
-	pSPI = &SPI;    // -->>
-  
+	   pSPI = &SPI;    // -->>
 }
 
 // initializer for I2C - we only indicate the reset pin!
@@ -181,13 +201,15 @@ void Adafruit_SH1106::begin(uint8_t vccstate, uint8_t i2caddr, bool reset) {
   _i2caddr = i2caddr;
 
   // set pin directions
-  if (sid != -1){
+//  if (sid != -1){
+  if (dc != -1) {  // Modified by Tamakichi,2018/08/18
     pinMode(dc, OUTPUT);
     pinMode(cs, OUTPUT);
     csport      = portOutputRegister(digitalPinToPort(cs));
     cspinmask   = digitalPinToBitMask(cs);
     dcport      = portOutputRegister(digitalPinToPort(dc));
     dcpinmask   = digitalPinToBitMask(dc);
+ /*
     if (!hwSPI){
       // set pins for software-SPI
       pinMode(sid, OUTPUT);
@@ -197,12 +219,14 @@ void Adafruit_SH1106::begin(uint8_t vccstate, uint8_t i2caddr, bool reset) {
       mosiport    = portOutputRegister(digitalPinToPort(sid));
       mosipinmask = digitalPinToBitMask(sid);
     }
+*/
     if (hwSPI) {
       pSPI->begin ();
       pSPI->setClockDivider (SPI_CLOCK_DIV2); // full speed 36MHz
     }
   } else {
     // I2C Init
+    HWIRE.setClock(400000);
     HWIRE.begin();
   }
 
@@ -343,7 +367,7 @@ void Adafruit_SH1106::invertDisplay(uint8_t i) {
 }
 
 void Adafruit_SH1106::SH1106_command(uint8_t c) { 
-  if (sid != -1)
+  if (dc != -1)
   {
     // SPI
     //digitalWrite(cs, HIGH);
@@ -459,7 +483,7 @@ void Adafruit_SH1106::dim(boolean dim) {
 */
 
 void Adafruit_SH1106::SH1106_data(uint8_t c) {
-  if (sid != -1) {
+  if (dc != -1) {
     // SPI
     //digitalWrite(cs, HIGH);
     *csport |= cspinmask;
@@ -501,7 +525,7 @@ void Adafruit_SH1106::display(void) {
   	int p = 0;
 	  byte i, j, k =0;
 	
-	  if(sid != -1) {
+	  if(dc != -1) {
 		  for ( i = 0; i < height; i++) {
 				// send a bunch of data in one xmission
         SH1106_command(0xB0 + i + m_row);//set page address

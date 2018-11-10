@@ -18,11 +18,15 @@ All text above, and the splash screen must be included in any redistribution
 
 #include <Adafruit_SH1106_STM32.h>
 
-// hardware SPI1 (the default case): SDA(MOSI)=PA7, SCK=PA5
-#define OLED_DC    PB0
+#define SPI_PORT   1 // 1:SPI1, 2:SPI2
+// hardware SPI1 (the default case): SDA(MOSI)=PA7,  SCK=PA5
+//          SPI2                   : SDA(MOSI)=PA15, SCK=PA13
+
+#define OLED_DC    PB12
 #define OLED_CS    PB1
 #define OLED_RESET -1
-Adafruit_SH1106 display(OLED_DC, OLED_RESET, OLED_CS);
+
+Adafruit_SH1106 display(OLED_DC, OLED_RESET, OLED_CS, SPI_PORT);
 
 /*
 // hardware SPI2 (comment out): SDA(MOSI)=PB15, SCK=PB13
@@ -331,4 +335,3 @@ void testdrawline() {
   }
   delay(250);
 }
-

@@ -4,14 +4,18 @@ Arduino STM32用 SH1106コントローラ使用 OLEDドライバライブラリ
  - https://github.com/wonho-maker/Adafruit_SH1106  
  - https://github.com/rogerclarkmelbourne/Arduino_STM32/tree/master/STM32F1/libraries/Adafruit_SSD1306  
 
-SPI、I2Cのインタフェースに対応しています.  
+SPI、I2Cのインタフェースに対応しています.   
+SPIポートは、SPI1、SPI2の利用が可能です.  
 
-本ライブラリをArduino STM32安定版環境(R20170323)にて利用する場合は、  
-Adafruit_SH1106_STM32.cpp 内の次の箇所の修正が必要です。
+**オリジナル版からの変更点**
+* コンストラクタの引数変更  
+  `Adafruit_SH1106(int8_t DC, int8_t RST, int8_t CS, uint8_t _spidev = 1);`  
+  第4引数 `_spidev`の追加  
+  * 1: SPI1を利用 SDA(MOSI)=PA7, SCK=PA5  
+  * 2: SPI2を利用 SDA(MOSI)=PA15, SCK=PA13  
 
-    #define OLD_ARDUINO_STM32 0  // Arduino STM32環境が R20170323:1、 それ以降 0
-
-安定版にて利用する場合は、1を設定して下さい.  
+* 指定座標のピクセル参照関数の追加  
+  `getPixel(int16_t x, int16_t y)`  
 
 
 以下、https://github.com/wonho-maker/Adafruit_SH1106  のREADMEの原文をそのまま掲載します.

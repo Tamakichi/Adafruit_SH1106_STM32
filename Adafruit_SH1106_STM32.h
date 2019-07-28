@@ -30,7 +30,8 @@ However, SH1106 driver don't provide several functions such as scroll commands.
 #define _Adafruit_SH1106_STM32_H_
 
 #include <SPI.h>
-#include <Adafruit_GFX_AS.h>
+//#include <Adafruit_GFX_AS.h>
+#include <Adafruit_GFX.h>
 
 #define BLACK 0
 #define WHITE 1

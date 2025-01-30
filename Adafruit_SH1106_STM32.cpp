@@ -18,7 +18,7 @@ All text above, and the splash screen below must be included in any redistributi
 
 #include <stdlib.h>
 #include "Adafruit_SH1106_STM32.h"
-#define USESPLASH  1
+#define USESPLASH  0
 
 #include <Wire.h>
 #define HWIRE Wire
